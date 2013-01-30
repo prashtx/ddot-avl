@@ -134,7 +134,30 @@ namespace AVLTest02
             return data;
         }
 
-        static string GetTripData(SqlConnection connection)
+        static string GetCurrentVersion(SqlConnection connection)
+        {
+            string queryString = "SELECT V.TIME_TABLE_VERSION_ID FROM dbo.CURRENT_VERSION AS V;";
+            string version = "-1";
+
+            SqlCommand command = new SqlCommand(queryString, connection);
+            SqlDataReader reader = command.ExecuteReader();
+
+            try
+            {
+                while (reader.Read())
+                {
+                    version = reader[0].ToString();
+                }
+            }
+            finally
+            {
+                reader.Close();
+            }
+
+            return version;
+        }
+
+        static string GetTripData(SqlConnection connection, string version)
         {
             string queryString = "SELECT T.TRIP_ID, T.TRIP_END_TIME, " +
                 "(SELECT GEO_NODE_NAME FROM dbo.GEO_NODE " +
@@ -142,9 +165,10 @@ namespace AVLTest02
                 "(SELECT G.GEO_NODE_NAME FROM dbo.GEO_NODE AS G " +
                 "WHERE T.TRIP_START_NODE_ID = G.GEO_NODE_ID) AS StartNode, " +
                 "T.BLOCK_ID " +
-                "FROM dbo.TRIP AS T WHERE TIME_TABLE_VERSION_ID=77;";
+                "FROM dbo.TRIP AS T WHERE TIME_TABLE_VERSION_ID=@version;";
 
             SqlCommand command = new SqlCommand(queryString, connection);
+            command.Parameters.Add(new SqlParameter("@version", version));
             SqlDataReader reader = command.ExecuteReader();
 
             string data = String.Empty;
@@ -200,13 +224,14 @@ namespace AVLTest02
             return data;
         }
 
-        static string GetBlockData(SqlConnection connection)
+        static string GetBlockData(SqlConnection connection, string version)
         {
             string queryString = "SELECT WP.WORK_PIECE_ID, WP.BLOCK_ID " +
                 "FROM TMMain.dbo.WORK_PIECE AS WP " +
-                "WHERE TIME_TABLE_VERSION_ID=77;";
+                "WHERE TIME_TABLE_VERSION_ID=@version;";
 
             SqlCommand command = new SqlCommand(queryString, connection);
+            command.Parameters.Add(new SqlParameter("@version", version));
             SqlDataReader reader = command.ExecuteReader();
 
             string data = String.Empty;
@@ -346,9 +371,10 @@ namespace AVLTest02
                 try
                 {
                     connection.Open();
-                    string tripData = GetTripData(connection);
+                    string version = GetCurrentVersion(connection);
+                    string tripData = GetTripData(connection, version);
                     string stopData = GetStopData(connection);
-                    string blockData = GetBlockData(connection);
+                    string blockData = GetBlockData(connection, version);
                     PostPlaintext(TRIPS_ENDPOINT, tripData);
                     PostPlaintext(STOPS_ENDPOINT, stopData);
                     PostPlaintext(BLOCKS_ENDPOINT, blockData);
