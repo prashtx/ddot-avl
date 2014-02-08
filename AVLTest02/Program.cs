@@ -40,7 +40,7 @@ namespace AVLTest02
 
             if (type == AdherenceType.Short)
             {
-                queryString = "SELECT TOP 500 L.LOGGED_MESSAGE_SHORT_ID, L.ADHERENCE, W.WORK_PIECE_ID, L.MESSAGE_TIMESTAMP " +
+                queryString = "SELECT TOP 200 L.LOGGED_MESSAGE_SHORT_ID, L.ADHERENCE, W.WORK_PIECE_ID, L.MESSAGE_TIMESTAMP " +
                 "FROM TMDailyLog.dbo.LOGGED_MESSAGE_SHORT AS L " +
                 "JOIN TMMain.dbo.VEHICLE AS V " +
                 "ON L.SOURCE_HOST=V.RNET_ADDRESS " +
@@ -55,7 +55,7 @@ namespace AVLTest02
             }
             else
             {
-                queryString = "SELECT TOP 500 L.TRANSMITTED_MESSAGE_ID, L.ADHERENCE, W.WORK_PIECE_ID, L.MESSAGE_TIMESTAMP " +
+                queryString = "SELECT TOP 200 L.TRANSMITTED_MESSAGE_ID, L.ADHERENCE, W.WORK_PIECE_ID, L.MESSAGE_TIMESTAMP " +
                 "FROM TMDailyLog.dbo.LOGGED_MESSAGE AS L " +
                 "JOIN TMMain.dbo.VEHICLE AS V " +
                 "ON L.SOURCE_HOST=V.RNET_ADDRESS " +
@@ -413,7 +413,7 @@ namespace AVLTest02
                     GetAndPostAdherence(AdherenceType.Regular);
                 }
 
-                Thread.Sleep(60000);
+                Thread.Sleep(30000);
             }
         }
     }
