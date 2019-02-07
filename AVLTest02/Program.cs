@@ -50,7 +50,7 @@ namespace AVLTest02
                 "AND DWP.SCHEDULED_LOGON_TIME < @seconds " +
                 "AND DWP.SCHEDULED_LOGOFF_TIME > @seconds) AS W " +
                 "ON W.CURRENT_VEHICLE_ID=V.VEHICLE_ID " +
-                "WHERE L.LOGGED_MESSAGE_SHORT_ID>@lastId " +
+                "WHERE L.MESSAGE_TIMESTAMP > DateADD(mi, -30, getdate()) " +
                 "AND L.CALENDAR_ID=@today " +
                 "ORDER BY L.LOGGED_MESSAGE_SHORT_ID DESC;";
             }
@@ -66,7 +66,7 @@ namespace AVLTest02
                 "AND DWP.SCHEDULED_LOGON_TIME < @seconds " +
                 "AND DWP.SCHEDULED_LOGOFF_TIME > @seconds) AS W " +
                 "ON W.CURRENT_VEHICLE_ID=V.VEHICLE_ID " +
-                "WHERE L.TRANSMITTED_MESSAGE_ID>@lastId " +
+                "WHERE L.MESSAGE_TIMESTAMP > DateADD(mi, -30, getdate()) " +
                 "AND L.CALENDAR_ID=@today " +
                 "AND L.ADHERENCE IS NOT NULL " +
                 "ORDER BY L.TRANSMITTED_MESSAGE_ID DESC;";
@@ -87,15 +87,6 @@ namespace AVLTest02
             var now = DateTime.UtcNow.AddHours(-4);
             var seconds = (now.Hour * 3600) + (now.Minute * 60) + now.Second;
             command.Parameters.Add(new SqlParameter("@seconds", seconds));
-
-            if (type == AdherenceType.Short)
-            {
-                command.Parameters.Add(new SqlParameter("@lastId", lastShortId));
-            }
-            else
-            {
-                command.Parameters.Add(new SqlParameter("@lastId", lastRegularId));
-            }
 
             SqlDataReader reader = command.ExecuteReader();
 
@@ -326,7 +317,7 @@ namespace AVLTest02
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="adherenceData"></param>
         /// <returns>true if we need to post static AVL data, false otherwise</returns>
@@ -358,6 +349,7 @@ namespace AVLTest02
                 }
                 catch (SqlException e)
                 {
+                    Console.WriteLine("Error in GetAndPostAdherence:");
                     Console.WriteLine(e.Message);
                 }
             }
@@ -383,6 +375,7 @@ namespace AVLTest02
                 }
                 catch (SqlException e)
                 {
+                    Console.WriteLine("Error in GetAndPostStatic:");
                     Console.WriteLine(e.Message);
                 }
             }
