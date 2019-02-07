@@ -42,6 +42,7 @@ namespace AVLTest02
             {
                 queryString = "SELECT TOP 200 L.LOGGED_MESSAGE_SHORT_ID, L.ADHERENCE, W.WORK_PIECE_ID, L.MESSAGE_TIMESTAMP " +
                 "FROM TMDailyLog.dbo.LOGGED_MESSAGE_SHORT AS L " +
+                "WITH (NOLOCK) " +
                 "JOIN TMMain.dbo.VEHICLE AS V " +
                 "ON L.SOURCE_HOST=V.RNET_ADDRESS " +
                 "JOIN (SELECT * FROM TMDailyLog.dbo.DAILY_WORK_PIECE AS DWP " +
@@ -49,7 +50,7 @@ namespace AVLTest02
                 "AND DWP.SCHEDULED_LOGON_TIME < @seconds " +
                 "AND DWP.SCHEDULED_LOGOFF_TIME > @seconds) AS W " +
                 "ON W.CURRENT_VEHICLE_ID=V.VEHICLE_ID " +
-                "WHERE L.LOGGED_MESSAGE_SHORT_ID>@lastId " +
+                "WHERE L.MESSAGE_TIMESTAMP > DateADD(mi, -30, getdate()) " +
                 "AND L.CALENDAR_ID=@today " +
                 "ORDER BY L.LOGGED_MESSAGE_SHORT_ID DESC;";
             }
@@ -57,6 +58,7 @@ namespace AVLTest02
             {
                 queryString = "SELECT TOP 200 L.TRANSMITTED_MESSAGE_ID, L.ADHERENCE, W.WORK_PIECE_ID, L.MESSAGE_TIMESTAMP " +
                 "FROM TMDailyLog.dbo.LOGGED_MESSAGE AS L " +
+                "WITH (NOLOCK) " +
                 "JOIN TMMain.dbo.VEHICLE AS V " +
                 "ON L.SOURCE_HOST=V.RNET_ADDRESS " +
                 "JOIN (SELECT * FROM TMDailyLog.dbo.DAILY_WORK_PIECE AS DWP " +
@@ -64,7 +66,7 @@ namespace AVLTest02
                 "AND DWP.SCHEDULED_LOGON_TIME < @seconds " +
                 "AND DWP.SCHEDULED_LOGOFF_TIME > @seconds) AS W " +
                 "ON W.CURRENT_VEHICLE_ID=V.VEHICLE_ID " +
-                "WHERE L.TRANSMITTED_MESSAGE_ID>@lastId " +
+                "WHERE L.MESSAGE_TIMESTAMP > DateADD(mi, -30, getdate()) " +
                 "AND L.CALENDAR_ID=@today " +
                 "AND L.ADHERENCE IS NOT NULL " +
                 "ORDER BY L.TRANSMITTED_MESSAGE_ID DESC;";
@@ -85,15 +87,6 @@ namespace AVLTest02
             var now = DateTime.UtcNow.AddHours(-4);
             var seconds = (now.Hour * 3600) + (now.Minute * 60) + now.Second;
             command.Parameters.Add(new SqlParameter("@seconds", seconds));
-
-            if (type == AdherenceType.Short)
-            {
-                command.Parameters.Add(new SqlParameter("@lastId", lastShortId));
-            }
-            else
-            {
-                command.Parameters.Add(new SqlParameter("@lastId", lastRegularId));
-            }
 
             SqlDataReader reader = command.ExecuteReader();
 
@@ -324,7 +317,7 @@ namespace AVLTest02
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="adherenceData"></param>
         /// <returns>true if we need to post static AVL data, false otherwise</returns>
@@ -345,7 +338,7 @@ namespace AVLTest02
         static bool GetAndPostAdherence(AdherenceType type)
         {
             bool needsStaticData = false;
-            string realtimeConnectionString = "Data Source=10.63.3.6;Initial Catalog=TMDailyLog;Connection Timeout=15;Integrated Security=false;User ID=CfA;Password=CfA2012";
+            string realtimeConnectionString = "Data Source=10.63.3.6;Initial Catalog=TMDailyLog;Connection Timeout=30;Integrated Security=false;User ID=CfA;Password=CfA2012";
             using (SqlConnection connection = new SqlConnection(realtimeConnectionString))
             {
                 try
@@ -356,6 +349,7 @@ namespace AVLTest02
                 }
                 catch (SqlException e)
                 {
+                    Console.WriteLine("Error in GetAndPostAdherence:");
                     Console.WriteLine(e.Message);
                 }
             }
@@ -365,7 +359,7 @@ namespace AVLTest02
 
         static void GetAndPostStatic()
         {
-            string staticConnectionString = "Data Source=10.63.3.6;Initial Catalog=TMMain;Connection Timeout=15;Integrated Security=false;User ID=CfA;Password=CfA2012";
+            string staticConnectionString = "Data Source=10.63.3.6;Initial Catalog=TMMain;Connection Timeout=30;Integrated Security=false;User ID=CfA;Password=CfA2012";
             using (SqlConnection connection = new SqlConnection(staticConnectionString))
             {
                 try
@@ -381,6 +375,7 @@ namespace AVLTest02
                 }
                 catch (SqlException e)
                 {
+                    Console.WriteLine("Error in GetAndPostStatic:");
                     Console.WriteLine(e.Message);
                 }
             }
